@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cycle & Mind Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body id="appBody" class="bg-stone-50 text-stone-900 min-h-screen pb-12 transition-colors duration-500">
+
+    <!-- Header -->
+    <header class="bg-stone-50/80 backdrop-blur-md border-b border-stone-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div id="headerLogo" class="w-9 h-9 rounded-xl bg-stone-900 flex items-center justify-center text-stone-50 font-bold text-base shadow-sm transition-colors duration-500">✦</div>
+                <div>
+                    <h1 class="text-xl font-bold text-stone-900 tracking-tight leading-none">Cycle & Mind</h1>
+                    <span id="headerSubtitle" class="text-[10px] font-semibold text-stone-500 uppercase tracking-widest">ADHD & Hormonal Balance</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="openLogModal()" class="bg-stone-900 hover:bg-stone-800 text-stone-50 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm transition-all active:scale-95">
+                    + Log Cycle
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+
+        <!-- 1-Tap Quick Action Bar -->
+        <div class="bg-white p-4 rounded-2xl border border-stone-200 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div>
+                <h3 class="font-bold text-stone-900 text-sm">Quick Check-in</h3>
+                <p class="text-xs text-stone-500">Log today instantly without opening forms.</p>
+            </div>
+            <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                <button onclick="quickLogToday()" class="flex-1 sm:flex-none px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-xl transition-all">
+                    ⚡ Period Started Today
+                </button>
+                <button onclick="quickLogSymptom('Brain Fog')" class="flex-1 sm:flex-none px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-xl transition-all">
+                    ☁︎ Log Brain Fog
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Overview Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Current Status & Executive Function -->
+            <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <span id="phaseBadge" class="text-xs font-semibold uppercase tracking-wider text-stone-700 bg-stone-100 px-2.5 py-1 rounded-full">Current Phase</span>
+                    <h3 id="statusPhase" class="text-xl font-bold text-stone-900 mt-3">Loading...</h3>
+                    <p id="statusCountdown" class="text-sm text-stone-500 mt-1">Calculated from history</p>
+                </div>
+                <div class="mt-4 pt-4 border-t border-stone-100">
+                    <p id="executiveInsight" class="text-xs text-stone-600 font-medium italic">"Executive function forecast loading..."</p>
+                </div>
+            </div>
+
+            <!-- Next Period Prediction -->
+            <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-stone-700 bg-stone-100 px-2.5 py-1 rounded-full">Next Period</span>
+                    <h3 id="nextPeriodDate" class="text-xl font-bold text-stone-900 mt-3">No data</h3>
+                    <p id="nextPeriodCountdown" class="text-sm text-stone-500 mt-1">Log past cycles to predict</p>
+                </div>
+                <div class="mt-4 pt-4 border-t border-stone-100 flex justify-between text-xs text-stone-400">
+                    <span>Avg Cycle: <strong id="avgCycleLen" class="text-stone-700">-- days</strong></span>
+                    <span>Avg Period: <strong id="avgPeriodLen" class="text-stone-700">-- days</strong></span>
+                </div>
+            </div>
+
+            <!-- Hormonal Support Tip -->
+            <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-stone-700 bg-stone-100 px-2.5 py-1 rounded-full">Nervous System & Fuel</span>
+                    <h3 id="hormoneTipTitle" class="text-base font-bold text-stone-900 mt-3">Phase Protocol</h3>
+                    <p id="hormoneTipDesc" class="text-xs text-stone-500 mt-1">Actionable nutrition and dopamine regulation strategy.</p>
+                </div>
+                <div class="mt-4 pt-4 border-t border-stone-100 text-xs text-stone-400">
+                    Hormonal balance support
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Chart Section -->
+        <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-stone-900 text-base">Cycle Length Variance</h3>
+                <span class="text-xs text-stone-400">Last recorded cycles</span>
+            </div>
+            <div class="relative h-48 w-full">
+                <canvas id="cycleChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Data Management Toolbar -->
+        <div class="bg-white p-5 rounded-2xl border border-stone-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h3 class="font-bold text-stone-900 text-base">Cycle History</h3>
+                <p class="text-xs text-stone-500">Stored securely in your browser's local storage.</p>
+            </div>
+            <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                <button onclick="exportData()" class="flex-1 md:flex-none px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-all">
+                    Export JSON
+                </button>
+                <label class="flex-1 md:flex-none px-3 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-all cursor-pointer text-center">
+                    Import File
+                    <input type="file" id="importFile" accept=".json,.csv" onchange="importDataFile(event)" class="hidden">
+                </label>
+                <button onclick="openImportModal()" class="flex-1 md:flex-none px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-semibold rounded-xl transition-all">
+                    Paste JSON
+                </button>
+            </div>
+        </div>
+
+        <!-- History List -->
+        <div class="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-stone-50 border-b border-stone-100 text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                            <th class="p-4">Start Date</th>
+                            <th class="p-4">End Date</th>
+                            <th class="p-4">Cycle Length</th>
+                            <th class="p-4">Flow</th>
+                            <th class="p-4">Symptoms & State</th>
+                            <th class="p-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cycleTableBody" class="divide-y divide-stone-100 text-sm">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Log/Edit Modal -->
+    <div id="logModal" class="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <h3 id="modalTitle" class="text-lg font-bold text-stone-900">Log New Cycle</h3>
+                <button onclick="closeLogModal()" class="text-stone-400 hover:text-stone-600 font-bold p-1">✕</button>
+            </div>
+            
+            <form id="cycleForm" onsubmit="saveCycle(event)" class="space-y-4">
+                <input type="hidden" id="editIndex" value="-1">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-stone-600 mb-1">Period Start Date *</label>
+                    <input type="date" id="startDate" required class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:border-stone-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-600 mb-1">Period End Date (Optional)</label>
+                    <input type="date" id="endDate" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:border-stone-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-600 mb-1">Flow Intensity</label>
+                    <select id="flow" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:border-stone-500 bg-white">
+                        <option value="Light">Light</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Heavy">Heavy</option>
+                        <option value="Spotting">Spotting</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-600 mb-1">Cognitive & Mental Health Symptoms</label>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <label class="flex items-center space-x-2 p-2 rounded-lg border border-stone-100 bg-stone-50 cursor-pointer"><input type="checkbox" name="symptom" value="Brain Fog" class="rounded text-stone-800 focus:ring-stone-500"><span>☁︎ Brain Fog</span></label>
+                        <label class="flex items-center space-x-2 p-2 rounded-lg border border-stone-100 bg-stone-50 cursor-pointer"><input type="checkbox" name="symptom" value="Task Paralysis" class="rounded text-stone-800 focus:ring-stone-500"><span>⟡ Task Paralysis</span></label>
+                        <label class="flex items-center space-x-2 p-2 rounded-lg border border-stone-100 bg-stone-50 cursor-pointer"><input type="checkbox" name="symptom" value="RSD / Overwhelm" class="rounded text-stone-800 focus:ring-stone-500"><span>≋ RSD / Overwhelm</span></label>
+                        <label class="flex items-center space-x-2 p-2 rounded-lg border border-stone-100 bg-stone-50 cursor-pointer"><input type="checkbox" name="symptom" value="Mood Swings" class="rounded text-stone-800 focus:ring-stone-500"><span>☇ Mood Swings</span></label>
+                        <label class="flex items-center space-x-2 p-2 rounded-lg border border-stone-100 bg-stone-50 cursor-pointer"><input type="checkbox" name="symptom" value="Fatigue" class="rounded text-stone-800 focus:ring-stone-500"><span>𓍯 Deep Fatigue</span></label>
+                        <label class="flex items-center space-x-2 p-2 rounded-lg border border-stone-100 bg-stone-50 cursor-pointer"><input type="checkbox" name="symptom" value="Cramps" class="rounded text-stone-800 focus:ring-stone-500"><span>✶ Physical Cramps</span></label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-stone-600 mb-1">Notes</label>
+                    <textarea id="notes" rows="2" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-sm focus:outline-none focus:border-stone-500" placeholder="Optional notes on energy or focus..."></textarea>
+                </div>
+
+                <div class="flex space-x-3 pt-2">
+                    <button type="button" onclick="closeLogModal()" class="flex-1 px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-semibold rounded-xl transition-all">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-stone-50 text-sm font-semibold rounded-xl shadow-sm transition-all">Save Cycle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Paste JSON Modal -->
+    <div id="importModal" class="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-stone-200 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-stone-900">Paste JSON Data</h3>
+                <button onclick="closeImportModal()" class="text-stone-400 hover:text-stone-600 font-bold p-1">✕</button>
+            </div>
+            <p class="text-xs text-stone-500">Paste your exported JSON cycle array below to load historical records.</p>
+            <textarea id="importJsonText" rows="6" class="w-full px-3 py-2 rounded-xl border border-stone-200 text-xs font-mono focus:outline-none focus:border-stone-500" placeholder='[{"startDate": "2026-01-01", ...}]'></textarea>
+            <div class="flex space-x-3 pt-2">
+                <button type="button" onclick="closeImportModal()" class="flex-1 px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 text-sm font-semibold rounded-xl transition-all">Cancel</button>
+                <button type="button" onclick="importJsonString()" class="flex-1 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-stone-50 text-sm font-semibold rounded-xl shadow-sm transition-all">Import Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cycles = JSON.parse(localStorage.getItem('cycle_tracker_data')) || [];
+        let cycleChart = null;
+
+        function init() {
+            sortCycles();
+            renderTable();
+            updateAnalytics();
+        }
+
+        function sortCycles() {
+            cycles.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+        }
+
+        function saveData() {
+            localStorage.setItem('cycle_tracker_data', JSON.stringify(cycles));
+            init();
+        }
+
+        function quickLogToday() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (cycles.length > 0 && cycles[0].startDate === todayStr) {
+                alert('Today is already logged as a start date.');
+                return;
+            }
+            cycles.push({ startDate: todayStr, endDate: '', flow: 'Medium', symptoms: [], notes: 'Quick logged today' });
+            saveData();
+        }
+
+        function quickLogSymptom(symptomName) {
+            if (cycles.length === 0) {
+                alert('Please log at least one cycle first.');
+                return;
+            }
+            if (!cycles[0].symptoms) cycles[0].symptoms = [];
+            if (!cycles[0].symptoms.includes(symptomName)) {
+                cycles[0].symptoms.push(symptomName);
+                saveData();
+                alert(`Added "${symptomName}" to your current cycle record.`);
+            } else {
+                alert(`"${symptomName}" is already logged for this cycle.`);
+            }
+        }
+
+        function openLogModal(index = -1) {
+            document.getElementById('editIndex').value = index;
+            document.getElementById('cycleForm').reset();
+            const checkboxes = document.querySelectorAll('input[name="symptom"]');
+            checkboxes.forEach(cb => cb.checked = false);
+
+            if (index > -1) {
+                document.getElementById('modalTitle').innerText = 'Edit Cycle';
+                const c = cycles[index];
+                document.getElementById('startDate').value = c.startDate || '';
+                document.getElementById('endDate').value = c.endDate || '';
+                document.getElementById('flow').value = c.flow || 'Medium';
+                document.getElementById('notes').value = c.notes || '';
+                if (c.symptoms) {
+                    checkboxes.forEach(cb => {
+                        if (c.symptoms.includes(cb.value)) cb.checked = true;
+                    });
+                }
+            } else {
+                document.getElementById('modalTitle').innerText = 'Log New Cycle';
+                document.getElementById('startDate').value = new Date().toISOString().split('T')[0];
+            }
+            document.getElementById('logModal').classList.remove('hidden');
+        }
+
+        function closeLogModal() {
+            document.getElementById('logModal').classList.add('hidden');
+        }
+
+        function openImportModal() {
+            document.getElementById('importModal').classList.remove('hidden');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.add('hidden');
+        }
+
+        function saveCycle(e) {
+            e.preventDefault();
+            const index = parseInt(document.getElementById('editIndex').value);
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const flow = document.getElementById('flow').value;
+            const notes = document.getElementById('notes').value;
+            const symptoms = Array.from(document.querySelectorAll('input[name="symptom"]:checked')).map(cb => cb.value);
+
+            const cycleObj = { startDate, endDate, flow, symptoms, notes };
+
+            if (index > -1) {
+                cycles[index] = cycleObj;
+            } else {
+                cycles.push(cycleObj);
+            }
+
+            saveData();
+            closeLogModal();
+        }
+
+        function deleteCycle(index) {
+            if (confirm('Delete this cycle record?')) {
+                cycles.splice(index, 1);
+                saveData();
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('cycleTableBody');
+            tbody.innerHTML = '';
+
+            if (cycles.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-stone-400">No cycles logged yet. Click "+ Log Cycle" or quick-log above.</td></tr>`;
+                return;
+            }
+
+            cycles.forEach((c, idx) => {
+                let cycleLenCalc = '--';
+                if (idx < cycles.length - 1) {
+                    const currentStart = new Date(c.startDate);
+                    const prevStart = new Date(cycles[idx + 1].startDate);
+                    const diffTime = Math.abs(currentStart - prevStart);
+                    cycleLenCalc = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + ' days';
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-stone-50/80 transition-colors';
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-stone-900">${c.startDate}</td>
+                    <td class="p-4 text-stone-600">${c.endDate || '---'}</td>
+                    <td class="p-4 text-stone-600">${cycleLenCalc}</td>
+                    <td class="p-4"><span class="px-2.5 py-1 text-xs rounded-full bg-stone-100 text-stone-700 font-semibold">${c.flow}</span></td>
+                    <td class="p-4 text-xs text-stone-500">${c.symptoms && c.symptoms.length ? c.symptoms.join(', ') : 'None'}</td>
+                    <td class="p-4 text-right space-x-2">
+                        <button onclick="openLogModal(${idx})" class="text-xs text-stone-500 hover:text-stone-800 font-semibold">Edit</button>
+                        <button onclick="deleteCycle(${idx})" class="text-xs text-stone-700 hover:text-stone-900 font-semibold">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateAnalytics() {
+            if (cycles.length === 0) {
+                document.getElementById('statusPhase').innerText = 'No Data';
+                document.getElementById('statusCountdown').innerText = 'Log your first cycle';
+                document.getElementById('executiveInsight').innerText = 'Executive function forecast inactive until data is logged.';
+                document.getElementById('nextPeriodDate').innerText = '---';
+                document.getElementById('nextPeriodCountdown').innerText = '---';
+                document.getElementById('hormoneTipTitle').innerText = 'Baseline Protocol';
+                document.getElementById('hormoneTipDesc').innerText = 'Track consistent cycles to receive customized nervous system and nutrient protocols.';
+                document.getElementById('avgCycleLen').innerText = '-- days';
+                document.getElementById('avgPeriodLen').innerText = '-- days';
+                return;
+            }
+
+            let cycleLengths = [];
+            let periodLengths = [];
+
+            for (let i = 0; i < cycles.length - 1; i++) {
+                const curr = new Date(cycles[i].startDate);
+                const next = new Date(cycles[i+1].startDate);
+                const diff = Math.abs(curr - next) / (1000 * 60 * 60 * 24);
+                if (diff > 15 && diff < 60) cycleLengths.push(diff);
+            }
+
+            cycles.forEach(c => {
+                if (c.endDate && c.startDate) {
+                    const start = new Date(c.startDate);
+                    const end = new Date(c.endDate);
+                    const pLen = Math.abs(end - start) / (1000 * 60 * 60 * 24) + 1;
+                    if (pLen > 0 && pLen < 15) periodLengths.push(pLen);
+                }
+            });
+
+            const avgCycle = cycleLengths.length > 0 ? Math.round(cycleLengths.reduce((a,b)=>a+b,0) / cycleLengths.length) : 28;
+            const avgPeriod = periodLengths.length > 0 ? Math.round(periodLengths.reduce((a,b)=>a+b,0) / periodLengths.length) : 5;
+
+            document.getElementById('avgCycleLen').innerText = avgCycle + ' days';
+            document.getElementById('avgPeriodLen').innerText = avgPeriod + ' days';
+
+            const latestStart = new Date(cycles[0].startDate);
+            const today = new Date();
+            const daysSinceStart = Math.floor((today - latestStart) / (1000 * 60 * 60 * 24));
+
+            let currentPhaseName = 'Follicular Phase';
+            let countdownText = '';
+            let execInsight = '';
+            let tipTitle = '';
+            let tipDesc = '';
+
+            if (daysSinceStart >= 0 && daysSinceStart < avgPeriod) {
+                currentPhaseName = 'Menstrual Phase ☽';
+                countdownText = `Day ${daysSinceStart + 1} of period`;
+                execInsight = '✦ Dopamine and estrogen are at baseline. Prioritize rest, low cognitive load, and self-compassion if executive dysfunction spikes.';
+                tipTitle = 'Iron & Nervous System Support';
+                tipDesc = 'Incorporate warm, iron-dense foods, magnesium glycinate for muscle relaxation, and reduce complex multi-tasking.';
+            } else if (daysSinceStart >= avgPeriod && daysSinceStart < avgCycle - 14) {
+                currentPhaseName = 'Follicular Phase ⟡';
+                countdownText = `Approx. ${avgCycle - 14 - daysSinceStart} days until ovulation`;
+                execInsight = '✦ Rising estrogen enhances dopamine sensitivity. Ideal window for tackling complex projects, learning new skills, and high-focus work.';
+                tipTitle = 'Momentum & Creative Energy';
+                tipDesc = 'Leverage high working memory windows for deep work. Support rising metabolic energy with fresh vegetables and lean proteins.';
+            } else if (daysSinceStart >= avgCycle - 16 && daysSinceStart <= avgCycle - 12) {
+                currentPhaseName = 'Ovulation Window 𖥸';
+                countdownText = 'Peak energy & social capacity';
+                execInsight = '✦ Peak estrogen and testosterone. High verbal fluency and social capacity. Watch out for overcommitment and overstimulation.';
+                tipTitle = 'Social & Collaborative Peak';
+                tipDesc = 'Schedule high-collaboration meetings or presentations. Stay hydrated and ensure adequate sensory recovery after social burnout.';
+            } else {
+                currentPhaseName = 'Luteal Phase 𓍯';
+                countdownText = `Approx. ${avgCycle - daysSinceStart} days until next period`;
+                execInsight = '✦ Declining estrogen can sharply lower dopamine and working memory. Task paralysis or RSD risk increases. Ruthlessly cut non-essential tasks.';
+                tipTitle = 'Blood Sugar & Dopamine Protection';
+                tipDesc = 'Increase complex carbohydrates and healthy fats to stabilize mood. Protect sleep hygiene and avoid over-scheduling.';
+            }
+
+            document.getElementById('statusPhase').innerText = currentPhaseName;
+            document.getElementById('statusCountdown').innerText = countdownText;
+            document.getElementById('executiveInsight').innerText = execInsight;
+            document.getElementById('hormoneTipTitle').innerText = tipTitle;
+            document.getElementById('hormoneTipDesc').innerText = tipDesc;
+
+            const nextPeriod = new Date(latestStart);
+            nextPeriod.setDate(nextPeriod.getDate() + avgCycle);
+            document.getElementById('nextPeriodDate').innerText = nextPeriod.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            const daysToNext = Math.ceil((nextPeriod - today) / (1000 * 60 * 60 * 24));
+            document.getElementById('nextPeriodCountdown').innerText = daysToNext > 0 ? `In ${daysToNext} days` : 'Due now or past due';
+
+            renderChart(cycleLengths.reverse());
+        }
+
+        function renderChart(dataVals) {
+            const ctx = document.getElementById('cycleChart').getContext('2d');
+            if (cycleChart) cycleChart.destroy();
+
+            cycleChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dataVals.map((_, i) => `Cycle ${i + 1}`),
+                    datasets: [{
+                        label: 'Cycle Length (Days)',
+                        data: dataVals,
+                        borderColor: '#292524',
+                        backgroundColor: 'rgba(41, 37, 36, 0.03)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#292524'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            beginAtZero: false,
+                            grid: { color: '#f5f5f4' },
+                            ticks: { font: { size: 11 } }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cycles, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", "cycle_history.json");
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function importDataFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (Array.isArray(parsed)) {
+                        cycles = parsed;
+                        saveData();
+                        alert('Data imported successfully!');
+                    } else {
+                        alert('Invalid format.');
+                    }
+                } catch (err) {
+                    alert('Error parsing JSON file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function importJsonString() {
+            try {
+                const text = document.getElementById('importJsonText').value;
+                const parsed = JSON.parse(text);
+                if (Array.isArray(parsed)) {
+                    cycles = parsed;
+                    saveData();
+                    closeImportModal();
+                    alert('Data imported successfully!');
+                } else {
+                    alert('Invalid JSON array.');
+                }
+            } catch (err) {
+                alert('Invalid JSON syntax.');
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
